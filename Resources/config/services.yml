@@ -2,3 +2,7 @@ services:
     pierrre_encrypter.manager:
         class: Pierrre\EncrypterBundle\Util\EncrypterManager
         arguments: ["%pierrre_encrypter.encrypters%"]
+
+    pierrre_encrypter.transformer:
+        class: Pierrre\EncrypterBundle\Form\Transformer\EncrypterTransformer
+        arguments: ["%pierrre_encrypter.encrypters%"]
