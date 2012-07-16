@@ -1,0 +1,20 @@
+{
+    "name": "avro/pierrre-encrypter-bundle",
+    "type": "symfony-bundle",
+    "description": "Symfony2 Encrypter Bundle",
+    "keywords": ["encrypter mcrypt"],
+    "homepage": "http://github.com/pierrre/PierrreEncrypterBundle",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Pierre Durand"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.2"
+    },
+    "autoload": {
+        "psr-0": { "Pierrre\\EncrypterBundle": "" }
+    },
+    "target-dir": "Pierrre/EncrypterBundle"
+}
