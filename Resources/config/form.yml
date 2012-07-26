@@ -1,0 +1,11 @@
+services:
+    pierrre_encrypter.form.transformer.encrypter:
+        class: Pierrre\EncrypterBundle\Form\Transformer\EncrypterTransformer
+        arguments: ["@pierrre_encrypter.manager", "%pierrre_encrypter.form.default_encrypter%"]
+
+    pierrre.form.type.encrypted_text:
+        class: Pierrre\EncrypterBundle\Form\Type\EncryptedTextType
+        arguments: ["@pierrre_encrypter.form.transformer.encrypter"]
+        tags:
+            - {name: form.type,  alias: encryptedText}
+

@@ -4,7 +4,7 @@ namespace Pierrre\EncrypterBundle\Form\Type;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\DataTransformerInterface;
-use Symfony\Component\Form\FormBuilder;
+use Symfony\Component\Form\FormBuilderInterface;
 
 class EncryptedTextType extends AbstractType
 {
@@ -15,18 +15,18 @@ class EncryptedTextType extends AbstractType
         $this->encrypterTransformer = $encrypterTransformer;
     }
 
-    public function buildForm(FormBuilder $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder->appendClientTransformer($this->encrypterTransformer);
     }
 
-    public function getParent(array $options)
+    public function getParent()
     {
-        return 'textarea';
+        return 'text';
     }
 
     public function getName()
     {
-        return 'encrypted_text';
+        return 'encryptedText';
     }
 }

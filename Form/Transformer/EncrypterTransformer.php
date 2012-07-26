@@ -2,21 +2,23 @@
 
 namespace Pierrre\EncrypterBundle\Form\Transformer;
 
-use Pierrre\EncrypterBundle\Util\Encrypter;
+use Pierrre\EncrypterBundle\Util\EncrypterManager;
 use Symfony\Component\Form\DataTransformerInterface;
 
 class EncrypterTransformer implements DataTransformerInterface
 {
-    private $encrypter;
+    private $encrypterManager;
+    private $encrypterName;
 
     /**
      * Constructor.
      *
      * @param Encrypter $encrypter
      */
-    public function __construct(Encrypter $encrypter)
+    public function __construct(EncrypterManager $encrypterManager, $encrypterName)
     {
-        $this->encrypter = $encrypter;
+        $this->encrypterManager = $encrypterManager;
+        $this->encrypterName = $encrypterName;
     }
 
     /**
@@ -24,7 +26,9 @@ class EncrypterTransformer implements DataTransformerInterface
      */
     public function transform($value)
     {
-        return $value;
+        $encrypter = $this->encrypterManager->get($this->encrypterName);
+
+        return $encrypter->decrypt($value);
     }
 
     /**
@@ -32,6 +36,8 @@ class EncrypterTransformer implements DataTransformerInterface
      */
     public function reverseTransform($value)
     {
-        return $this->encrypter->encrypt($value);
+        $encrypter = $this->encrypterManager->get($this->encrypterName);
+
+        return $encrypter->encrypt($value);
     }
 }

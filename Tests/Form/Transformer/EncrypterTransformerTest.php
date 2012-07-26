@@ -6,10 +6,9 @@ use Pierrre\EncrypterBundle\Form\EncrypterTransformer;
 
 class EncrypterTransformerTest extends \PHPUnit_Framework_TestCase
 {
-    public function testShouldEncryptOnlyDuringReverseTransform()
+    public function testShouldEncryptAndDecryptOnTransform()
     {
         $input = 'text';
-        $encryptedInput = '<p>text</p>';
 
         $encrypter = $this->getMockBuilder('encrypter')
             ->disableOriginalConstructor()
@@ -22,7 +21,9 @@ class EncrypterTransformerTest extends \PHPUnit_Framework_TestCase
 
         $transformer = new EncrypterTransformer($encrypter);
 
-        $this->assertEquals($encryptedInput, $transformer->reverseTransform($input));
-        $this->assertEquals($encryptedInput, $transformer->transform($encryptedInput));
+        $encryptedInput = $transformer->reverseTransform($input);
+
+        $this->assertNotEquals($input, $encryptedInput);
+        $this->assertEquals($input, $transformer->transform($encryptedInput));
     }
 }

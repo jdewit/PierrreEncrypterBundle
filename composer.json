@@ -1,5 +1,5 @@
 {
-    "name": "avro/pierrre-encrypter-bundle",
+    "name": "pierrre/pierrre-encrypter-bundle",
     "type": "symfony-bundle",
     "description": "Symfony2 Encrypter Bundle",
     "keywords": ["encrypter mcrypt"],

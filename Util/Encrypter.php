@@ -5,29 +5,29 @@ namespace Pierrre\EncrypterBundle\Util;
 class Encrypter{
 	const FIXED_INITIALIZATION_VECTOR_CHAR = "\0";
 	private static $BASE64_URL_SAFE_REPLACE = array('+/', '-_');
-	
+
 	const DEFAULT_ALGORITHM = MCRYPT_RIJNDAEL_128;
 	const DEFAULT_MODE = MCRYPT_MODE_CBC;
 	const DEFAULT_RANDOM_INITIALIZATION_VECTOR = true;
 	const DEFAULT_BASE64 = true;
 	const DEFAULT_BASE64_URL_SAFE = true;
-	
+
 	private $key;
 	private $algorithm;
 	private $mode;
 	private $randomInitializationVector;
 	private $base64;
 	private $base64UrlSafe;
-	
+
 	private $module;
 	private $initializationVectorSize;
-	
+
 	private $mcryptRandomMethod;
 	private $fixedInitializationVector;
-	
+
 	/**
 	 * @param array $options
-	 * 
+	 *
 	 * @throws \InvalidArgumentException
 	 */
 	public function __construct(array $options){
@@ -38,61 +38,62 @@ class Encrypter{
 		$this->randomInitializationVector = isset($options['random_initialization_vector']) ? (bool)$options['random_initialization_vector'] : self::DEFAULT_RANDOM_INITIALIZATION_VECTOR;
 		$this->base64 = isset($options['base64']) ? (bool)$options['base64'] : self::DEFAULT_BASE64;
 		$this->base64UrlSafe = isset($options['base64_url_safe']) ? (bool)$options['base64_url_safe'] : self::DEFAULT_BASE64_URL_SAFE;
-		
+
 		//Initialize encryption
 		if($this->mode == MCRYPT_MODE_STREAM){
 			throw new \InvalidArgumentException('Stream mode not supported');
 		}
-		
+
 		$this->module = @mcrypt_module_open($this->algorithm, '', $this->mode, '');
 		if($this->module === false){
 			throw new \InvalidArgumentException('Unknown algorithm/mode');
 		}
-		
+
 		if(strlen($this->key) == 0){
 			throw new \InvalidArgumentException('The key length must be > 0');
 		} else if(strlen($this->key) > ($keyMaxLength = mcrypt_enc_get_key_size($this->module))){
 			throw new \InvalidArgumentException('The key length must be <= ' . $keyMaxLength . ' for the choosen algorithm (' . $this->algorithm . ')');
 		}
-		
+
 		$this->initializationVectorSize = mcrypt_enc_get_iv_size($this->module);
-		
+
 		if($this->randomInitializationVector){
-			$this->mcryptRandomMethod = defined('MCRYPT_DEV_URANDOM') ? MCRYPT_DEV_URANDOM : MCRYPT_DEV_RANDOM; 
+			$this->mcryptRandomMethod = defined('MCRYPT_DEV_URANDOM') ? MCRYPT_DEV_URANDOM : MCRYPT_DEV_RANDOM;
 		} else{
 			$this->fixedInitializationVector = str_repeat(self::FIXED_INITIALIZATION_VECTOR_CHAR, $this->initializationVectorSize);
 		}
 	}
-	
+
 	public function close(){
 		$this->checkClosed();
-		
+
 		mcrypt_module_close($this->module);
 		unset($this->module);
 	}
-	
+
 	private function checkClosed(){
 		if(!isset($this->module)){
 			throw new \BadMethodCallException('The encrypter is closed');
 		}
 	}
-	
+
 	/**
 	 * @param scalar|object $data
 	 *
 	 * @return string
-	 * 
+	 *
 	 * @throws \InvalidArgumentException
 	 */
 	public function encrypt($data){
 		$this->checkClosed();
-		
-		$data = self::convertToString($data);
-		
+
+        // do not process empty data
 		if(strlen($data) == 0){
-			throw new \InvalidArgumentException('Encryption doesn\'t support empty string');
+            return $data;
 		}
-		
+
+		$data = self::convertToString($data);
+
 		//Encryption
 		if($this->randomInitializationVector){
 			$initializationVector = mcrypt_create_iv($this->initializationVectorSize, $this->mcryptRandomMethod);
@@ -104,58 +105,63 @@ class Encrypter{
 		if($this->randomInitializationVector){
 			$encryptedData = $initializationVector . $encryptedData;
 		}
-		
+
 		//Base64
 		if($this->base64){
 			$encryptedData = base64_encode($encryptedData);
-			
+
 			//Url safe
 			if($this->base64UrlSafe){
 				$encryptedData = strtr($encryptedData, self::$BASE64_URL_SAFE_REPLACE[0], self::$BASE64_URL_SAFE_REPLACE[1]);
 			}
-			
+
 			$encryptedData = rtrim($encryptedData, '='); //Remove '=' at the end (it's useless)
 		}
-		
+
 		return $encryptedData;
 	}
-	
+
 	/**
 	 * @param string $encryptedData
 	 *
 	 * @return string
-	 * 
+	 *
 	 * @throws \InvalidArgumentException
 	 */
 	public function decrypt($encryptedData){
 		$this->checkClosed();
-		
+
+        // do not process empty data
+		if (empty($encryptedData)) {
+            return $encryptedData;
+		}
+
 		//Check encrypted data
 		if(!is_string($encryptedData)){
 			throw new \InvalidArgumentException('Encrypted data must be a string');
 		}
-		
+
 		//Base64
 		if($this->base64){
 			if($this->base64UrlSafe){
 				$encryptedData = strtr($encryptedData, self::$BASE64_URL_SAFE_REPLACE[1], self::$BASE64_URL_SAFE_REPLACE[0]);
 			}
-			
+
 			$encryptedData = base64_decode($encryptedData, true);
-			
+
 			if($encryptedData === false){
 				throw new \InvalidArgumentException('Encrypted data is not a valid base64 string');
 			}
 		}
-		
+
 		//Encryption
 		if($this->randomInitializationVector){
 			$initializationVector = substr($encryptedData, 0, $this->initializationVectorSize);
-			
+
 			if(strlen($initializationVector) < $this->initializationVectorSize){
 				throw new \InvalidArgumentException('Encrypted data is not long enough to get the initialization vector');
 			}
-			
+
 			$encryptedData = substr($encryptedData, $this->initializationVectorSize);
 		} else{
 			$initializationVector = $this->fixedInitializationVector;
@@ -163,15 +169,15 @@ class Encrypter{
 		mcrypt_generic_init($this->module, $this->key, $initializationVector);
 		$data = mdecrypt_generic($this->module, $encryptedData);
 		$data = rtrim($data, "\0");
-		
+
 		return $data;
 	}
-	
+
 	/**
 	 * @param mixed $data
-	 * 
+	 *
 	 * @return string
-	 * 
+	 *
 	 * @throws \InvalidArgumentException
 	 */
 	public static function convertToString($data){
@@ -190,7 +196,7 @@ class Encrypter{
 		} else{
 			throw new \InvalidArgumentException('Encryption is not supported for the "' . gettype($data) . '" type');
 		}
-		
+
 		return $data;
 	}
 }
